@@ -43,7 +43,8 @@ layout.addWidget(text_box)
 window.setLayout(layout)
 
 def keyPressEvent(event):
-    if event.key()==Qt.Key.Key_Escape: window.close()
+    if event.key()==Qt.Key.Key_Escape:
+        hide_window()
 
 window.keyPressEvent = keyPressEvent
 
