@@ -20,9 +20,22 @@ window.resize(500,200)
 
 text_box = QTextEdit()
 text_box.setPlaceholderText("What do you need to remember?")
-# text_box.setParent(window)
+text_box.setStyleSheet("""
+    QTextEdit{
+        background-color:#1e1e1e;
+        color:white;
+        border:2px solid #3a3a3a;
+        boreder-radius:12px;
+        font-size: 16px;
+    }
+
+    QTextEdit:focus{
+        border:2px solid #6c63ff;
+    }
+""")
 
 layout = QVBoxLayout()
+layout.setContentsMargins(12,12,12,12)
 layout.addWidget(text_box)
 window.setLayout(layout)
 
