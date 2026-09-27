@@ -54,12 +54,17 @@ window.move(window_x,0)
 
 
 def save_note():
-    note = text_box.toPlainText().strip()
+    note = text_box.toPlainText()
     if not note:
         return
-
+    notes = []
+    if os.path.exists(NOTES_FILE):
+        with open(NOTES_FILE, "r", encoding="utf-8") as file:
+            data = json.load(file)
+            notes = data.get("notes", [])
+            notes.append(note)
     with open(NOTES_FILE, "w", encoding = "utf-8") as file:
-        json.dump({"note": note}, file, indent=4)
+        json.dump({"notes": notes}, file, indent=4)
 
 
 def load_note():
@@ -68,8 +73,10 @@ def load_note():
 
     with open(NOTES_FILE, "r", encoding = "utf-8") as file:
         data =json.load(file)
-
-    text_box.setPlainText(data.get("note",""))
+    notes = data.get("notes",[])
+    if notes:
+        text_box.setPlainText(notes[-1])
+    
 
 def show_window():
 
