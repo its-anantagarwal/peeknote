@@ -1,5 +1,5 @@
 import sys
-from PySide6.QtWidgets import QApplication, QWidget, QTextEdit,QVBoxLayout
+from PySide6.QtWidgets import QApplication, QWidget, QTextEdit,QVBoxLayout,QLabel
 from PySide6.QtCore import Qt,QTimer,QPropertyAnimation
 from PySide6.QtGui import QCursor,QShortcut,QKeySequence
 import json
@@ -16,8 +16,14 @@ shortcut_open = False
 last_saved_note = ""
 
 window = QWidget()
+# window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+window.setStyleSheet("""
+    QWidget{
+        background-color:#121212;
+    }
+""")
 window.setWindowFlags(Qt.WindowType.FramelessWindowHint|Qt.WindowType.WindowStaysOnTopHint)
-window.setWindowTitle("Peeknote")
+window.setWindowTitle("Peek Note")
 window.resize(500,200)
 
 
@@ -25,10 +31,11 @@ text_box = QTextEdit()
 text_box.setPlaceholderText("What do you need to remember?")
 text_box.setStyleSheet("""
     QTextEdit{
-        background-color:#1e1e1e;
+        background-color: #1e1e1e;
         color:white;
         border:2px solid #3a3a3a;
-        boreder-radius:12px;
+        border-radius:12px;
+        padding:12px;
         font-size: 16px;
     }
 
@@ -37,10 +44,38 @@ text_box.setStyleSheet("""
     }
 """)
 
+title = QLabel("Peek Note")
+title.setStyleSheet("""
+    QLable{
+        color:white;
+        font-size:14px;
+        font-weight:bold;
+        padding-left:4px;
+    }
+""")
+
+counter = QLabel("0 characters")
+counter.setStyleSheet("""
+    QLabel{
+        color:#888888;
+        font-size:11px;
+        padding-left:4px;
+    }
+""")
+
 layout = QVBoxLayout()
 layout.setContentsMargins(12,12,12,12)
+layout.setSpacing(8)
+layout.addWidget(title)
 layout.addWidget(text_box)
+layout.addWidget(counter)
 window.setLayout(layout)
+
+def update_counter():
+    count = len(text_box.toPlainText())
+    counter.setText(f"{count} characters")
+
+text_box.textChanged.connect(update_counter)
 
 def keyPressEvent(event):
     if event.key()==Qt.Key.Key_Escape:
@@ -84,6 +119,8 @@ def load_note():
     if notes:
         text_box.setPlainText(notes[-1])
         last_saved_note = notes[-1]
+
+    update_counter()
     
 
 def show_window():
