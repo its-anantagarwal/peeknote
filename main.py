@@ -1,16 +1,18 @@
 import sys
 from PySide6.QtWidgets import QApplication, QWidget, QTextEdit,QVBoxLayout
 from PySide6.QtCore import Qt,QTimer,QPropertyAnimation
-from PySide6.QtGui import QCursor
-
+from PySide6.QtGui import QCursor,QShortcut,QKeySequence
 import json
 import os
+
+from shortcut import GlobalShortcut
 
 NOTES_FILE = "notes.json"
 
 app = QApplication(sys.argv)
 
 animating = False
+shortcut_open = False
 
 window = QWidget()
 window.setWindowFlags(Qt.WindowType.FramelessWindowHint|Qt.WindowType.WindowStaysOnTopHint)
@@ -118,8 +120,23 @@ def show_window():
     window.animation = animation
 
 
+def open_from_shortcut():
+    global shortcut_open
+    if window.isVisible():
+        hide_window()
+        return
+    shortcut_open = True
+    show_window()
+
+global_shortcut = GlobalShortcut()
+global_shortcut.activated.connect(open_from_shortcut)
+
+
 def hide_window():
     global animating
+    global shortcut_open
+    shortcut_open = False
+
     if animating:
         return
     animating = True
@@ -157,16 +174,29 @@ def hide_window():
     save_note()
 
 
-def check_mouse_pos():
+def check_mouse():
+    global shortcut_open
     mouse_position = QCursor.pos()
+    popup_rect = window.geometry()
 
-    if mouse_position.y() <= 5 and not window.isVisible():
+    screen = app.primaryScreen()
+    screen_geometry = screen.geometry()
+    popup_width = window.width()
+    trigger_left = (screen_geometry.width()-popup_width)//2
+    trigger_right = trigger_left+popup_width
+
+    mouse_in_trigger_zone = trigger_left<=mouse_position.x()<=trigger_right and mouse_position.y()<=5
+
+    if mouse_in_trigger_zone and not window.isVisible():
+        shortcut_open = False
         show_window()
-    elif window.isVisible() and not animating and mouse_position.y() > window.height() + 20:
+    elif window.isVisible() and popup_rect.contains(mouse_position):
+        shortcut_open = False
+    elif window.isVisible() and not animating and not popup_rect.contains(mouse_position) and not shortcut_open:
         hide_window()
 
 timer = QTimer()
-timer.timeout.connect(check_mouse_pos)
+timer.timeout.connect(check_mouse)
 timer.start(50)
 
 load_note()
