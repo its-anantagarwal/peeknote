@@ -13,6 +13,7 @@ app = QApplication(sys.argv)
 
 animating = False
 shortcut_open = False
+last_saved_note = ""
 
 window = QWidget()
 window.setWindowFlags(Qt.WindowType.FramelessWindowHint|Qt.WindowType.WindowStaysOnTopHint)
@@ -54,20 +55,25 @@ window.move(window_x,0)
 
 
 def save_note():
+    global last_saved_note
     note = text_box.toPlainText()
     if not note:
+        return
+    if note==last_saved_note:
         return
     notes = []
     if os.path.exists(NOTES_FILE):
         with open(NOTES_FILE, "r", encoding="utf-8") as file:
             data = json.load(file)
             notes = data.get("notes", [])
-            notes.append(note)
+    
+    notes.append(note)
     with open(NOTES_FILE, "w", encoding = "utf-8") as file:
         json.dump({"notes": notes}, file, indent=4)
-
+    last_saved_note = note
 
 def load_note():
+    global last_saved_note
     if not os.path.exists(NOTES_FILE):
         return
 
@@ -76,6 +82,7 @@ def load_note():
     notes = data.get("notes",[])
     if notes:
         text_box.setPlainText(notes[-1])
+        last_saved_note = notes[-1]
     
 
 def show_window():
@@ -146,6 +153,8 @@ def hide_window():
 
     if animating:
         return
+
+    save_note()
     animating = True
 
     screen = app.primaryScreen()
@@ -177,8 +186,6 @@ def hide_window():
     animation.finished.connect(finished)
     animation.start()
     window.animation = animation
-
-    save_note()
 
 
 def check_mouse():
