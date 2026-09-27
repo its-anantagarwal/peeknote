@@ -3,6 +3,11 @@ from PySide6.QtWidgets import QApplication, QWidget, QTextEdit,QVBoxLayout
 from PySide6.QtCore import Qt,QTimer,QPropertyAnimation
 from PySide6.QtGui import QCursor
 
+import json
+import os
+
+NOTES_FILE = "notes.json"
+
 app = QApplication(sys.argv)
 
 animating = False
@@ -32,6 +37,24 @@ screen_width = screen_geometry.width()
 window_x = (screen_width-window.width())//2
 window.move(window_x,0)
 
+
+def save_note():
+    note = text_box.toPlainText().strip()
+    if not note:
+        return
+
+    with open(NOTES_FILE, "w", encoding = "utf-8") as file:
+        json.dump({"note": note}, file, indent=4)
+
+
+def load_note():
+    if not os.path.exists(NOTES_FILE):
+        return
+
+    with open(NOTES_FILE, "r", encoding = "utf-8") as file:
+        data =json.load(file)
+
+    text_box.setPlainText(data.get("note",""))
 
 def show_window():
 
@@ -65,6 +88,7 @@ def show_window():
 
     window.setGeometry(start_geometry)
     window.show()
+    text_box.setFocus()
 
     animation = QPropertyAnimation(window, b"geometry")
     animation.setDuration(300)
@@ -117,6 +141,8 @@ def hide_window():
     animation.start()
     window.animation = animation
 
+    save_note()
+
 
 def check_mouse_pos():
     mouse_position = QCursor.pos()
@@ -130,5 +156,6 @@ timer = QTimer()
 timer.timeout.connect(check_mouse_pos)
 timer.start(50)
 
+load_note()
 window.hide()
 sys.exit(app.exec())
