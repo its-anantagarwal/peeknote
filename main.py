@@ -1,9 +1,11 @@
 import sys
 from PySide6.QtWidgets import QApplication, QWidget, QTextEdit,QVBoxLayout
-from PySide6.QtCore import Qt,QTimer
+from PySide6.QtCore import Qt,QTimer,QPropertyAnimation
 from PySide6.QtGui import QCursor
 
 app = QApplication(sys.argv)
+
+animating = False
 
 window = QWidget()
 window.setWindowFlags(Qt.WindowType.FramelessWindowHint|Qt.WindowType.WindowStaysOnTopHint)
@@ -30,12 +32,99 @@ screen_width = screen_geometry.width()
 window_x = (screen_width-window.width())//2
 window.move(window_x,0)
 
+
+def show_window():
+
+    global animating
+
+    if animating:
+        return
+    animating = True
+
+    screen = app.primaryScreen()
+    screen_geometry = screen.geometry()
+
+    x = (screen_geometry.width() - window.width()) // 2
+    height = window.height()
+
+    start_geometry = window.geometry()
+    start_geometry.setRect(
+        x,
+        -height,
+        window.width(),
+        height
+    )
+
+    end_geometry = window.geometry()
+    end_geometry.setRect(
+        x,
+        0,
+        window.width(),
+        height
+    )
+
+    window.setGeometry(start_geometry)
+    window.show()
+
+    animation = QPropertyAnimation(window, b"geometry")
+    animation.setDuration(300)
+    animation.setStartValue(start_geometry)
+    animation.setEndValue(end_geometry)
+
+    def finished():
+        global animating
+        window.setGeometry(end_geometry)
+        animating = False
+
+    animation.finished.connect(finished)
+    animation.start()
+    window.animation = animation
+
+
+def hide_window():
+    global animating
+    if animating:
+        return
+    animating = True
+
+    screen = app.primaryScreen()
+    screen_geometry = screen.geometry()
+    x = (screen_geometry.width() - window.width()) // 2
+    height = window.height()
+
+    start_geometry = window.geometry()
+
+    end_geometry = window.geometry()
+    end_geometry.setRect(
+        x,
+        -height,
+        window.width(),
+        height
+    )
+
+    animation = QPropertyAnimation(window, b"geometry")
+    animation.setDuration(300)
+    animation.setStartValue(start_geometry)
+    animation.setEndValue(end_geometry)
+
+    def finished():
+        global animating
+        window.hide()
+        window.setGeometry(end_geometry)
+        animating = False
+
+    animation.finished.connect(finished)
+    animation.start()
+    window.animation = animation
+
+
 def check_mouse_pos():
     mouse_position = QCursor.pos()
-    if mouse_position.y()<=5:
-        window.show()
-    elif window.isVisible() and mouse_position.y()>window.height()+20:
-        window.hide()
+
+    if mouse_position.y() <= 5 and not window.isVisible():
+        show_window()
+    elif window.isVisible() and not animating and mouse_position.y() > window.height() + 20:
+        hide_window()
 
 timer = QTimer()
 timer.timeout.connect(check_mouse_pos)
