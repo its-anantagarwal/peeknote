@@ -93,29 +93,46 @@ window.move(window_x,0)
 
 def save_note():
     global last_saved_note
+    global current_note_id
     note = text_box.toPlainText()
     if not note:
         return
-    if note==last_saved_note:
-        return
+    # if note==last_saved_note:
+    #     return
     notes = []
     if os.path.exists(NOTES_FILE):
         with open(NOTES_FILE, "r", encoding="utf-8") as file:
             data = json.load(file)
             notes = data.get("notes", [])
+    else:
+        notes=[]
 
-    new_id = max((note["id"] for note in notes), default=0) + 1
+    if current_note_id is not None:
+        for item in notes:
+            if item["id"]==current_note_id:
+                item["text"]=note
+                break
+    else:
+        new_id = max((item["id"] for item in notes), default=0)+1
+        notes.append({
+            "id":new_id,
+            "text":note
+        })
+        current_note_id = new_id
+
+    # new_id = max((note["id"] for note in notes), default=0) + 1
     
-    notes.append({
-        "id":new_id,
-        "text":note
-    })
+    # notes.append({
+    #     "id":new_id,
+    #     "text":note
+    # })
     with open(NOTES_FILE, "w", encoding = "utf-8") as file:
         json.dump({"notes": notes}, file, indent=4)
     last_saved_note = note
 
 def load_note():
     global last_saved_note
+    global current_note_id
     if not os.path.exists(NOTES_FILE):
         return
 
@@ -123,9 +140,10 @@ def load_note():
         data =json.load(file)
     notes = data.get("notes",[])
     if notes:
-        latest_note = notes[-1]["text"]
-    text_box.setPlainText(latest_note)
-    last_saved_note = latest_note
+        latest_note = notes[-1]
+        text_box.setPlainText(latest_note["text"])
+        last_saved_note = latest_note["text"]
+        current_note_id=latest_note["id"]
 
     update_counter()
     
