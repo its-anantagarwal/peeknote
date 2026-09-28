@@ -26,6 +26,7 @@ animating = False
 shortcut_open = False
 last_saved_note = ""
 current_note_id = None
+popup_visible = False
 
 save_status_timer = QTimer()
 save_status_timer.setSingleShot(True)
@@ -407,10 +408,12 @@ def load_note():
 def show_window():
 
     global animating
+    global popup_visible
 
-    if animating:
+    if animating or popup_visible:
         return
     animating = True
+    popup_visible = True
 
     screen = app.primaryScreen()
     screen_geometry = screen.geometry()
@@ -436,6 +439,7 @@ def show_window():
 
     window.setGeometry(start_geometry)
     window.show()
+    window.raise_()
     text_box.setFocus()
 
     animation = QPropertyAnimation(window, b"geometry")
@@ -455,7 +459,7 @@ def show_window():
 
 def open_from_shortcut():
     global shortcut_open
-    if window.isVisible():
+    if popup_visible:
         hide_window()
         return
     shortcut_open = True
@@ -468,9 +472,11 @@ global_shortcut.activated.connect(open_from_shortcut)
 def hide_window():
     global animating
     global shortcut_open
+    global popup_visible
+
     shortcut_open = False
 
-    if animating:
+    if animating or not popup_visible:
         return
 
     save_note()
@@ -498,8 +504,10 @@ def hide_window():
 
     def finished():
         global animating
-        window.hide()
+        global popup_visible
+
         window.setGeometry(end_geometry)
+        popup_visible = False
         animating = False
 
     animation.finished.connect(finished)
@@ -520,12 +528,12 @@ def check_mouse():
 
     mouse_in_trigger_zone = trigger_left<=mouse_position.x()<=trigger_right and mouse_position.y()<=5
 
-    if mouse_in_trigger_zone and not window.isVisible():
+    if mouse_in_trigger_zone and not popup_visible and not animating:
         shortcut_open = False
         show_window()
-    elif window.isVisible() and popup_rect.contains(mouse_position):
+    elif popup_visible and popup_rect.contains(mouse_position):
         shortcut_open = False
-    elif window.isVisible() and not animating and not popup_rect.contains(mouse_position) and not shortcut_open:
+    elif popup_visible and not animating and not popup_rect.contains(mouse_position) and not shortcut_open:
         hide_window()
 
 timer = QTimer()
@@ -533,5 +541,11 @@ timer.timeout.connect(check_mouse)
 timer.start(50)
 
 load_note()
-window.hide()
+window.show()
+window.setGeometry(
+    window_x,
+    -window.height(),
+    window.width(),
+    window.height()
+)
 sys.exit(app.exec())
