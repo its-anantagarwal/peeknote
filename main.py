@@ -17,6 +17,9 @@ shortcut_open = False
 last_saved_note = ""
 current_note_id = None
 
+save_status_timer = QTimer()
+save_status_timer.setSingleShot(True)
+
 window = QWidget()
 # window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 window.setStyleSheet("""
@@ -64,12 +67,30 @@ counter.setStyleSheet("""
         padding-left:4px;
     }
 """)
+
 editor_page = QWidget()
 editor_layout = QVBoxLayout()
 editor_layout.setContentsMargins(0,0,0,0)
-editor_layout.setSpacing(8)
+editor_layout.setSpacing(4)
+
 editor_layout.addWidget(text_box)
-editor_layout.addWidget(counter)
+info_row = QHBoxLayout()
+info_row.setContentsMargins(0,0,0,0)
+info_row.setSpacing(8)
+info_row.addWidget(counter,1)
+
+save_status = QLabel("")
+save_status.setStyleSheet("""
+    QLabel{
+        color:#888888;
+        font-size:11px;
+    }
+""")
+
+info_row.addWidget(save_status)
+info_row.addStretch()
+editor_layout.addLayout(info_row)
+
 editor_page.setLayout(editor_layout)
 history_page = QWidget()
 history_layout = QVBoxLayout()
@@ -292,6 +313,15 @@ window_x = (screen_width-window.width())//2
 window.move(window_x,0)
 
 
+def show_save_feedback():
+    save_status.setText("Saved ✓")
+    save_status_timer.start(1500)
+
+def clear_save_feedback():
+    save_status.setText("")
+
+save_status_timer.timeout.connect(clear_save_feedback)
+
 def save_note():
     global last_saved_note
     global current_note_id
@@ -333,6 +363,7 @@ def save_note():
     with open(NOTES_FILE, "w", encoding = "utf-8") as file:
         json.dump({"notes": notes}, file, indent=4)
     last_saved_note = note
+    show_save_feedback()
 
 save_button.clicked.connect(save_note)
 
