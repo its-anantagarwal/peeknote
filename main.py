@@ -265,15 +265,25 @@ def save_note():
     global last_saved_note
     global current_note_id
     note = text_box.toPlainText()
-    if not note:
-        return
     notes = []
     if os.path.exists(NOTES_FILE):
-        with open(NOTES_FILE, "r", encoding="utf-8") as file:
-            data = json.load(file)
-            notes = data.get("notes", [])
-    else:
-        notes=[]
+        try:
+            with open(NOTES_FILE, "r", encoding="utf-8") as file:
+                data = json.load(file)
+                notes = data.get("notes", [])
+        except(json.JSONDecodeError, OSError):
+            notes=[]
+
+    if not note:
+        if current_note_id is not None:
+            notes=[item for item in notes if item ["id"] != current_note_id]
+            with open(NOTES_FILE, "w", encoding="utf-8") as file:
+                json.dump({"notes": notes}, file, indent=4)
+
+            current_note_id = None
+
+        last_saved_note=""
+        return
 
     if current_note_id is not None:
         for item in notes:
@@ -300,8 +310,11 @@ def load_note():
     if not os.path.exists(NOTES_FILE):
         return
 
-    with open(NOTES_FILE, "r", encoding = "utf-8") as file:
-        data =json.load(file)
+    try:
+        with open(NOTES_FILE, "r", encoding = "utf-8") as file:
+            data =json.load(file)
+    except(json.JSONDecodeError, OSError):
+        return
     notes = data.get("notes",[])
     if notes:
         latest_note = notes[-1]
