@@ -1,5 +1,5 @@
 import sys
-from PySide6.QtWidgets import QApplication, QWidget, QTextEdit,QVBoxLayout,QLabel,QPushButton,QListWidget,QHBoxLayout,QStackedWidget,QListWidgetItem
+from PySide6.QtWidgets import QApplication, QWidget, QTextEdit,QVBoxLayout,QLabel,QPushButton,QListWidget,QHBoxLayout,QStackedWidget,QListWidgetItem,QMessageBox
 from PySide6.QtCore import Qt,QTimer,QPropertyAnimation
 from PySide6.QtGui import QCursor,QShortcut,QKeySequence
 import json
@@ -174,7 +174,18 @@ def delete_selected_note():
         return
 
     note_id = selected_item.data(Qt.ItemDataRole.UserRole)
+    note_text = selected_item.text()
 
+    reply = QMessageBox.question(
+        window,
+        "Delete Note",
+        f"Are you sure you want to delete this note?\n\n{note_text}",
+        QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No,
+        QMessageBox.StandardButton.No
+    )
+
+    if reply!=QMessageBox.StandardButton.Yes:
+        return
     if not os.path.exists(NOTES_FILE):
         return
 
