@@ -1,5 +1,5 @@
 import sys
-from PySide6.QtWidgets import QApplication, QWidget, QTextEdit,QVBoxLayout,QLabel
+from PySide6.QtWidgets import QApplication, QWidget, QTextEdit,QVBoxLayout,QLabel,QPushButton,QListWidget,QHBoxLayout,QStackedWidget
 from PySide6.QtCore import Qt,QTimer,QPropertyAnimation
 from PySide6.QtGui import QCursor,QShortcut,QKeySequence
 import json
@@ -63,14 +63,91 @@ counter.setStyleSheet("""
         padding-left:4px;
     }
 """)
-
+editor_page = QWidget()
+editor_layout = QVBoxLayout()
+editor_layout.setContentsMargins(0,0,0,0)
+editor_layout.setSpacing(8)
+editor_layout.addWidget(text_box)
+editor_layout.addWidget(counter)
+editor_page.setLayout(editor_layout)
+history_page = QWidget()
+history_layout = QVBoxLayout()
+history_layout.setContentsMargins(0,0,0,0)
+history_layout.setSpacing(8)
+history_list = QListWidget()
+history_list.setStyleSheet("""
+    QListWidget{
+        background-color:#1e1e1e;
+        color:white;
+        border:2px solid #3a3a3a;
+        border-radius:10px;
+        padding:5px;
+        font-size:14px;
+    }
+    QListWidget::item{
+        padding:10px;
+    }
+    QListWidget::item:selected{
+        background-color:#6c63ff;
+    }
+""")
+history_layout.addWidget(history_list)
+history_page.setLayout(history_layout)
+pages = QStackedWidget()
+pages.addWidget(editor_page)
+pages.addWidget(history_page)
 layout = QVBoxLayout()
 layout.setContentsMargins(12,12,12,12)
 layout.setSpacing(8)
-layout.addWidget(title)
-layout.addWidget(text_box)
-layout.addWidget(counter)
+header = QHBoxLayout()
+header.addWidget(title)
+
+history_button = QPushButton("History")
+history_button.setFixedWidth(70)
+header.addWidget(history_button)
+layout.addLayout(header)
+layout.addWidget(pages)
 window.setLayout(layout)
+
+def load_history():
+    history_list.clear()
+    if not os.path.exists(NOTES_FILE):
+        return
+
+    with open (NOTES_FILE, "r", encoding="utf-8") as file:
+        data=json.load(file)
+
+    notes = data.get("notes", [])
+    for note in reversed(notes):
+        history_list.addItem(note["text"])
+
+
+def open_selected_note(item):
+    global current_note_id
+    global last_saved_note
+    selected_text = item.text()
+    if not os.path.exists(NOTES_FILE):
+        return
+
+    with open(NOTES_FILE, "r", encoding="utf-8") as file:
+        data = json.load(file)
+    notes = data.get("notes",[])
+    for note in notes:
+        if note["text"]==selected_text:
+            current_note_id = note["id"]
+            last_saved_note = note["text"]
+            text_box.setPlainText(note["text"])
+            break
+
+    pages.setCurrentWidget(editor_page)
+    text_box.setFocus()
+
+def show_history():
+    pages.setCurrentWidget(history_page)
+    load_history()
+
+history_button.clicked.connect(show_history)
+history_list.itemClicked.connect(open_selected_note)
 
 def update_counter():
     count = len(text_box.toPlainText())
