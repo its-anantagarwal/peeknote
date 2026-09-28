@@ -89,6 +89,7 @@ history_list.setStyleSheet("""
     }
     QListWidget::item:selected{
         background-color:#6c63ff;
+        color:white;
     }
 """)
 
@@ -164,6 +165,7 @@ def open_selected_note(item):
 
 def delete_selected_note():
     global current_note_id
+    global last_saved_note
     selected_item = history_list.currentItem()
     if selected_item is None:
         return
@@ -176,15 +178,18 @@ def delete_selected_note():
     with open(NOTES_FILE, "r", encoding="utf-8") as file:
         data = json.load(file)
 
-    notes = data.gwet("notes", [])
+    notes = data.get("notes", [])
     notes = [
-        note for note in notes if note["text"]!=selected_text
+        note for note in notes if note["id"]!=note_id
     ]
 
     with open(NOTES_FILE, "w", encoding="utf-8") as file:
         json.dump({"notes":notes}, file, indent=4)
 
-    current_note_id = None
+    if current_note_id==note_id:
+        current_note_id = None
+        last_saved_note=""
+        text_box.clear()
     load_history()
 
 delete_button.clicked.connect(delete_selected_note)
@@ -207,7 +212,7 @@ def new_note():
 
 history_button.clicked.connect(show_history)
 new_button.clicked.connect(new_note)
-history_list.itemClicked.connect(open_selected_note)
+history_list.itemDoubleClicked.connect(open_selected_note)
 
 def update_counter():
     count = len(text_box.toPlainText())
