@@ -119,9 +119,12 @@ header = QHBoxLayout()
 header.addWidget(title)
 new_button = QPushButton("+")
 new_button.setFixedWidth(35)
+save_button = QPushButton("Save")
+save_button.setFixedWidth(50)
 history_button = QPushButton("History")
 history_button.setFixedWidth(70)
 header.addWidget(new_button)
+header.addWidget(save_button)
 header.addWidget(history_button)
 layout.addLayout(header)
 layout.addWidget(pages)
@@ -241,8 +244,6 @@ def save_note():
     note = text_box.toPlainText()
     if not note:
         return
-    # if note==last_saved_note:
-    #     return
     notes = []
     if os.path.exists(NOTES_FILE):
         with open(NOTES_FILE, "r", encoding="utf-8") as file:
@@ -264,15 +265,11 @@ def save_note():
         })
         current_note_id = new_id
 
-    # new_id = max((note["id"] for note in notes), default=0) + 1
-    
-    # notes.append({
-    #     "id":new_id,
-    #     "text":note
-    # })
     with open(NOTES_FILE, "w", encoding = "utf-8") as file:
         json.dump({"notes": notes}, file, indent=4)
     last_saved_note = note
+
+save_button.clicked.connect(save_note)
 
 def load_note():
     global last_saved_note
