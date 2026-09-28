@@ -1,5 +1,5 @@
 import sys
-from PySide6.QtWidgets import QApplication, QWidget, QTextEdit,QVBoxLayout,QLabel,QPushButton,QListWidget,QHBoxLayout,QStackedWidget
+from PySide6.QtWidgets import QApplication, QWidget, QTextEdit,QVBoxLayout,QLabel,QPushButton,QListWidget,QHBoxLayout,QStackedWidget,QListWidgetItem
 from PySide6.QtCore import Qt,QTimer,QPropertyAnimation
 from PySide6.QtGui import QCursor,QShortcut,QKeySequence
 import json
@@ -91,7 +91,22 @@ history_list.setStyleSheet("""
         background-color:#6c63ff;
     }
 """)
+
+delete_button = QPushButton("Delete note")
+delete_button.setStyleSheet("""
+    QPushButton{
+        background-color:#2a2a2a;
+        color:white;
+        border:1px solid #444444;
+        border-radius: 6px;
+        padding:8px;
+    }
+    QPushButton:hover{
+        background-color:#3a3a3a;
+    }
+""")
 history_layout.addWidget(history_list)
+history_layout.addWidget(delete_button)
 history_page.setLayout(history_layout)
 pages = QStackedWidget()
 pages.addWidget(editor_page)
@@ -101,9 +116,11 @@ layout.setContentsMargins(12,12,12,12)
 layout.setSpacing(8)
 header = QHBoxLayout()
 header.addWidget(title)
-
+new_button = QPushButton("+")
+new_button.setFixedWidth(35)
 history_button = QPushButton("History")
 history_button.setFixedWidth(70)
+header.addWidget(new_button)
 header.addWidget(history_button)
 layout.addLayout(header)
 layout.addWidget(pages)
@@ -119,13 +136,15 @@ def load_history():
 
     notes = data.get("notes", [])
     for note in reversed(notes):
-        history_list.addItem(note["text"])
+        item = QListWidgetItem(note["text"])
+        item.setData(Qt.ItemDataRole.UserRole, note["id"])
+        history_list.addItem(item)
 
 
 def open_selected_note(item):
     global current_note_id
     global last_saved_note
-    selected_text = item.text()
+    note_id = item.data(Qt.ItemDataRole.UserRole)
     if not os.path.exists(NOTES_FILE):
         return
 
@@ -133,20 +152,61 @@ def open_selected_note(item):
         data = json.load(file)
     notes = data.get("notes",[])
     for note in notes:
-        if note["text"]==selected_text:
-            current_note_id = note["id"]
-            last_saved_note = note["text"]
+        if note["id"]==note_id:
+            current_note_id=note["id"]
+            last_saved_note=note["text"]
             text_box.setPlainText(note["text"])
             break
-
+    
     pages.setCurrentWidget(editor_page)
     text_box.setFocus()
+
+
+def delete_selected_note():
+    global current_note_id
+    selected_item = history_list.currentItem()
+    if selected_item is None:
+        return
+
+    note_id = selected_item.data(Qt.ItemDataRole.UserRole)
+
+    if not os.path.exists(NOTES_FILE):
+        return
+
+    with open(NOTES_FILE, "r", encoding="utf-8") as file:
+        data = json.load(file)
+
+    notes = data.gwet("notes", [])
+    notes = [
+        note for note in notes if note["text"]!=selected_text
+    ]
+
+    with open(NOTES_FILE, "w", encoding="utf-8") as file:
+        json.dump({"notes":notes}, file, indent=4)
+
+    current_note_id = None
+    load_history()
+
+delete_button.clicked.connect(delete_selected_note)
 
 def show_history():
     pages.setCurrentWidget(history_page)
     load_history()
 
+
+def new_note():
+    global current_note_id
+    global last_saved_note
+
+    current_note_id = None
+    last_saved_note = ""
+
+    text_box.clear()
+    pages.setCurrentWidget(editor_page)
+    text_box.setFocus()
+
 history_button.clicked.connect(show_history)
+new_button.clicked.connect(new_note)
 history_list.itemClicked.connect(open_selected_note)
 
 def update_counter():
