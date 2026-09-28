@@ -145,12 +145,18 @@ save_button = QPushButton("Save")
 save_button.setFixedWidth(50)
 history_button = QPushButton("History")
 history_button.setFixedWidth(70)
+
+quit_button = QPushButton("Quit")
+quit_button.setFixedWidth(50)
 header.addWidget(new_button)
 header.addWidget(save_button)
 header.addWidget(history_button)
+header.addWidget(quit_button)
 layout.addLayout(header)
 layout.addWidget(pages)
 window.setLayout(layout)
+
+quit_button.clicked.connect(app.quit)
 
 def load_history():
     history_list.clear()
