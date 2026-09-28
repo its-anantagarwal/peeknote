@@ -1,4 +1,6 @@
-<img width="1917" height="297" alt="image" src="https://github.com/user-attachments/assets/27c3dac5-d5fa-4f6c-973b-23d8f4f28b6a" /># peeknote
+# Peek Note
+
+<img width="1917" height="297" alt="image" src="https://github.com/user-attachments/assets/27c3dac5-d5fa-4f6c-973b-23d8f4f28b6a" />
 
 A popup notepad application for windows to quickly save important notes without much effort.
 
