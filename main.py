@@ -14,6 +14,7 @@ app = QApplication(sys.argv)
 animating = False
 shortcut_open = False
 last_saved_note = ""
+current_note_id = None
 
 window = QWidget()
 # window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -46,7 +47,7 @@ text_box.setStyleSheet("""
 
 title = QLabel("Peek Note")
 title.setStyleSheet("""
-    QLable{
+    QLabel{
         color:white;
         font-size:14px;
         font-weight:bold;
@@ -102,8 +103,13 @@ def save_note():
         with open(NOTES_FILE, "r", encoding="utf-8") as file:
             data = json.load(file)
             notes = data.get("notes", [])
+
+    new_id = max((note["id"] for note in notes), default=0) + 1
     
-    notes.append(note)
+    notes.append({
+        "id":new_id,
+        "text":note
+    })
     with open(NOTES_FILE, "w", encoding = "utf-8") as file:
         json.dump({"notes": notes}, file, indent=4)
     last_saved_note = note
@@ -117,8 +123,9 @@ def load_note():
         data =json.load(file)
     notes = data.get("notes",[])
     if notes:
-        text_box.setPlainText(notes[-1])
-        last_saved_note = notes[-1]
+        latest_note = notes[-1]["text"]
+    text_box.setPlainText(latest_note)
+    last_saved_note = latest_note
 
     update_counter()
     
