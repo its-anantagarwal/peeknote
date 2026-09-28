@@ -210,8 +210,14 @@ delete_button.clicked.connect(delete_selected_note)
 
 def show_history():
     pages.setCurrentWidget(history_page)
+    history_button.setText("Back")
     load_history()
 
+
+def back_to_editor():
+    pages.setCurrentWidget(editor_page)
+    history_button.setText("History")
+    text_box.setFocus()
 
 def new_note():
     global current_note_id
@@ -226,7 +232,13 @@ def new_note():
     pages.setCurrentWidget(editor_page)
     text_box.setFocus()
 
-history_button.clicked.connect(show_history)
+def toggle_history():
+    if pages.currentWidget()==history_page:
+        back_to_editor()
+    else:
+        show_history()
+
+history_button.clicked.connect(toggle_history)
 new_button.clicked.connect(new_note)
 history_list.itemDoubleClicked.connect(open_selected_note)
 
