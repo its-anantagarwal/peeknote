@@ -2,6 +2,7 @@ import sys
 from PySide6.QtWidgets import QApplication, QWidget, QTextEdit,QVBoxLayout,QLabel,QPushButton,QListWidget,QHBoxLayout,QStackedWidget,QListWidgetItem,QMessageBox
 from PySide6.QtCore import Qt,QTimer,QPropertyAnimation
 from PySide6.QtGui import QCursor,QShortcut,QKeySequence
+from datetime import datetime
 import json
 import os
 
@@ -134,13 +135,25 @@ def load_history():
     history_list.clear()
     if not os.path.exists(NOTES_FILE):
         return
-
-    with open (NOTES_FILE, "r", encoding="utf-8") as file:
-        data=json.load(file)
+    try:
+        with open (NOTES_FILE, "r", encoding="utf-8") as file:
+            data=json.load(file)
+    except(json.JSONDecodeError, OSError):
+        return
 
     notes = data.get("notes", [])
     for note in reversed(notes):
-        item = QListWidgetItem(note["text"])
+        created = note.get("created")
+        if created:
+            try:
+                created_time = datetime.fromisoformat(created)
+                formatted_time=created_time.strftime("%d %b %Y %I:%M %p")
+            except ValueError:
+                formatted_time = "Unknown"
+        else:
+            formatted_time = "Unknown"
+
+        item = QListWidgetItem(f"{note['text']}\nCreated: {formatted_time}")
         item.setData(Qt.ItemDataRole.UserRole, note["id"])
         history_list.addItem(item)
 
@@ -174,8 +187,33 @@ def delete_selected_note():
         return
 
     note_id = selected_item.data(Qt.ItemDataRole.UserRole)
-    note_text = selected_item.text()
 
+    if note_id is None:
+        return
+    if not os.path.exists(NOTES_FILE):
+        return
+
+    try:
+        with open(NOTES_FILE, "r", encoding="utf-8") as file:
+            data = json.load(file)
+    except(json.JSONDecodeError, OSError):
+        return
+
+    notes = data.get("notes")
+    if not isinstance(notes, list):
+        return
+
+    selected_note=None
+
+    for note in notes:
+        if note["id"]==note_id:
+            selected_note=note
+            break
+
+    if selected_note is None:
+        return
+
+    note_text = selected_note.get("text", "")
     reply = QMessageBox.question(
         window,
         "Delete Note",
@@ -186,16 +224,9 @@ def delete_selected_note():
 
     if reply!=QMessageBox.StandardButton.Yes:
         return
-    if not os.path.exists(NOTES_FILE):
-        return
 
-    with open(NOTES_FILE, "r", encoding="utf-8") as file:
-        data = json.load(file)
+    notes=[note for note in notes if note.get("id")!=note_id]
 
-    notes = data.get("notes", [])
-    notes = [
-        note for note in notes if note["id"]!=note_id
-    ]
 
     with open(NOTES_FILE, "w", encoding="utf-8") as file:
         json.dump({"notes":notes}, file, indent=4)
@@ -294,7 +325,8 @@ def save_note():
         new_id = max((item["id"] for item in notes), default=0)+1
         notes.append({
             "id":new_id,
-            "text":note
+            "text":note,
+            "created":datetime.now().isoformat()
         })
         current_note_id = new_id
 
