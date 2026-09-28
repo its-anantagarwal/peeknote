@@ -8,7 +8,17 @@ import os
 
 from shortcut import GlobalShortcut
 
-NOTES_FILE = "notes.json"
+app_data_folder = os.path.join(
+    os.environ["APPDATA"],
+    "PeekNote"
+)
+
+os.makedirs(app_data_folder, exist_ok=True)
+
+NOTES_FILE = os.path.join(
+    app_data_folder,
+    "notes.json"
+)
 
 app = QApplication(sys.argv)
 
