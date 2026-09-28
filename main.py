@@ -203,6 +203,8 @@ def new_note():
     global current_note_id
     global last_saved_note
 
+    save_note()
+
     current_note_id = None
     last_saved_note = ""
 
